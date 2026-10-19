@@ -8,6 +8,6 @@
         public int Year { get; set; } 
         public decimal DailyPrice { get; set; } 
         public bool IsAvailable { get; set; } = true;
-
+        public List<Booking> Bookings { get; set; } = new();
     }
 }
