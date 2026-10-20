@@ -3,7 +3,7 @@
     public class Booking
     {
         public int Id { get; set; }
-        public string CustomerName  { get; set; }
+        public string CustomerName  { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime EndTime { get; set; }
         public decimal TotalPrice { get; set; }
