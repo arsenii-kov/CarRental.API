@@ -22,7 +22,17 @@ namespace CarRental.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllCars()
         {
-            var cars = await _context.Cars.ToListAsync();
+            var cars = await _context.Cars
+                .Select(c => new CarDto 
+                {
+                    Id = c.Id,
+                    Brand = c.Brand,
+                    Model = c.Model,
+                    Year = c.Year,
+                    DailyPrice = c.DailyPrice,
+                    IsAvailable = c.IsAvailable
+                })
+                .ToListAsync();
             return Ok(cars);
         }
 
