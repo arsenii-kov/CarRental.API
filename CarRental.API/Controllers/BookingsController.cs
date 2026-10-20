@@ -95,9 +95,27 @@ namespace CarRental.API.Controllers
             };
 
             return Ok(responseDto);
-
         }
 
+        [HttpDelete ("{id}")]
+        public async Task<IActionResult> DeleteBooking(int id)
+        {
+            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
 
+            if (booking == null)
+            {
+                return NotFound("No reservation was found for this ID");
+            }
+
+            if (booking.StartDate <= DateTime.Now)
+            {
+                return BadRequest("A lease that has begun or has already ended cannot be canceled");
+            }
+
+            _context.Bookings.Remove(booking);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }
