@@ -20,9 +20,39 @@ namespace CarRental.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllCars()
+        public async Task<IActionResult> GetAllCars(
+            string? brand = null,
+            decimal? minPrice = null,
+            decimal? maxPrice = null,
+            int pageNumber = 1,
+            int pageSize = 10)
         {
-            var cars = await _context.Cars
+            if (pageNumber < 1 ||  pageSize < 1)
+            {
+                return BadRequest("PageNumber and PageSize must be greater than 0.");
+            }
+
+            var query = _context.Cars.AsQueryable();
+
+            if (!string.IsNullOrEmpty(brand))
+            {
+                query = query.Where(c => c.Brand == brand);
+            }
+
+            if (minPrice.HasValue)
+            {
+                query = query.Where(c => c.DailyPrice >= minPrice.Value);
+            }
+
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(c => c.DailyPrice <= maxPrice.Value);
+            }
+
+            query = query.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+
+
+            var cars = await query
                 .Select(c => new CarDto 
                 {
                     Id = c.Id,
