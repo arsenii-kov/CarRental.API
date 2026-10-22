@@ -1,4 +1,6 @@
-﻿namespace CarRental.API.DTOs
+﻿
+
+namespace CarRental.API.DTOs
 {
     public class CarDto
     {

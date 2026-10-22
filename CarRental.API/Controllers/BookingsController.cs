@@ -28,7 +28,8 @@ namespace CarRental.API.Controllers
                     CustomerName = b.CustomerName,
                     StartDate = b.StartDate,
                     EndTime = b.EndTime,
-                    TotalPrice = b.TotalPrice
+                    TotalPrice = b.TotalPrice,
+                    Status = b.Status.ToString()
                 })
                 .ToListAsync();
 
@@ -56,9 +57,10 @@ namespace CarRental.API.Controllers
             }
 
 
-            bool bookedCar = await _context.Bookings.AnyAsync(b =>  
-                b.CarId == dto.CarId && 
-                b.StartDate < dto.EndTime && 
+            bool bookedCar = await _context.Bookings.AnyAsync(b =>
+                b.CarId == dto.CarId &&
+                b.Status != BookingStatus.Cancelled &&
+                b.StartDate < dto.EndTime &&
                 b.EndTime > dto.StartDate);
 
             if (bookedCar)
@@ -91,7 +93,8 @@ namespace CarRental.API.Controllers
                 CustomerName = booking.CustomerName,
                 StartDate = booking.StartDate,
                 EndTime = booking.EndTime,
-                TotalPrice = booking.TotalPrice
+                TotalPrice = booking.TotalPrice,
+                Status = booking.Status.ToString()
             };
 
             return Ok(responseDto);
@@ -107,15 +110,25 @@ namespace CarRental.API.Controllers
                 return NotFound("No reservation was found for this ID");
             }
 
+            if (booking.Status == BookingStatus.Cancelled)
+            {
+                return BadRequest("This booking is already cancelled.");
+            }
+
+            if (booking.Status == BookingStatus.Completed)
+            {
+                return BadRequest("Completed bookings cannot be cancelled");
+            }
+
             if (booking.StartDate <= DateTime.Now)
             {
                 return BadRequest("A lease that has begun or has already ended cannot be canceled");
             }
 
-            _context.Bookings.Remove(booking);
+            booking.Status = BookingStatus.Cancelled;
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok();
         }
     }
 }

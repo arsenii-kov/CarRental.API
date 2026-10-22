@@ -8,6 +8,7 @@
         public DateTime StartDate { get; set; }
         public DateTime EndTime { get; set; }
         public decimal TotalPrice { get; set; }
+        public string Status { get; set; } = string.Empty;
     }
 }
 

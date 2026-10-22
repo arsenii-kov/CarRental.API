@@ -9,5 +9,6 @@
         public decimal TotalPrice { get; set; }
         public int CarId { get; set; }
         public Car? Car { get; set; }
+        public BookingStatus Status { get; set; } = BookingStatus.Pending;
     }
 }

@@ -90,6 +90,7 @@ namespace CarRental.API.Controllers
                 .Where(c => c.IsAvailable)
                 .Where(c => !c.Bookings.Any(b =>
                     b.StartDate < endDate &&
+                    b.Status != BookingStatus.Cancelled &&
                     b.EndTime > startDate))
                 .Select(c => new CarDto 
                 {
@@ -151,6 +152,5 @@ namespace CarRental.API.Controllers
 
             return Ok("The car has been successfully removed!");
         }
-
     }
 }

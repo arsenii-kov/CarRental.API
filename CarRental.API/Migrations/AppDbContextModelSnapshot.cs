@@ -36,6 +36,9 @@ namespace CarRental.API.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("TEXT");
 
