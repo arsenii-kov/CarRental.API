@@ -1,12 +1,10 @@
 ﻿using CarRental.API.Data;
 using CarRental.API.DTOs;
-using CarRental.API.Migrations;
 using CarRental.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
-using System.Runtime.ConstrainedExecution;
-using System.Xml;
+using FluentValidation;
 
 namespace CarRental.API.Controllers
 {
@@ -15,8 +13,10 @@ namespace CarRental.API.Controllers
     public class BookingsController : ControllerBase
     {
         private readonly AppDbContext _context;
-        public BookingsController(AppDbContext context)
+        private readonly IValidator<CreateBookingDto> _validator;
+        public BookingsController(AppDbContext context, IValidator<CreateBookingDto> validator)
         {
+            _validator = validator;
             _context = context;
         }
 
@@ -42,12 +42,15 @@ namespace CarRental.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDto dto)
         {
-            if (dto.EndTime <= dto.StartDate)
+            // Валидация входного DTO
+            var validationResult = await _validator.ValidateAsync(dto);
+
+            if (!validationResult.IsValid)
             {
-                return BadRequest("End date must be later than start date.");
+                return BadRequest(validationResult.ToDictionary());
             }
 
-
+            // Поиск авто
             var car = await _context.Cars.FirstOrDefaultAsync(c => c.Id == dto.CarId);
 
             if(car == null)
@@ -59,7 +62,7 @@ namespace CarRental.API.Controllers
                 return BadRequest("This car is temporarily unavailable for rent");
             }
 
-
+            // Проверка на пересечение дат
             bool bookedCar = await _context.Bookings.AnyAsync(b =>
                 b.CarId == dto.CarId &&
                 b.Status != BookingStatus.Cancelled &&
@@ -72,7 +75,6 @@ namespace CarRental.API.Controllers
             }
 
             // Расчет стоимости
-
             var duration = dto.EndTime - dto.StartDate;
             int days = (int)Math.Ceiling(duration.TotalDays);
 
@@ -109,7 +111,8 @@ namespace CarRental.API.Controllers
                 StartDate = dto.StartDate,
                 EndTime = dto.EndTime,
                 TotalPrice = totalPrice,
-                IncludeInsurance = dto.IncludeInsurance
+                IncludeInsurance = dto.IncludeInsurance,
+                Status = BookingStatus.Pending
             };
 
             _context.Bookings.Add(booking);
@@ -123,7 +126,8 @@ namespace CarRental.API.Controllers
                 StartDate = booking.StartDate,
                 EndTime = booking.EndTime,
                 TotalPrice = booking.TotalPrice,
-                Status = booking.Status.ToString()
+                Status = booking.Status.ToString(),
+                IncludeInsurance = booking.IncludeInsurance
             };
 
             return Ok(responseDto);
