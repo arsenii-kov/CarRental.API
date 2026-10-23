@@ -1,9 +1,12 @@
 ﻿using CarRental.API.Data;
 using CarRental.API.DTOs;
+using CarRental.API.Migrations;
 using CarRental.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using System.Runtime.ConstrainedExecution;
+using System.Xml;
 
 namespace CarRental.API.Controllers
 {
@@ -68,11 +71,36 @@ namespace CarRental.API.Controllers
                 return BadRequest("The car has already been reserved for the selected dates");
             }
 
+            // Расчет стоимости
 
             var duration = dto.EndTime - dto.StartDate;
             int days = (int)Math.Ceiling(duration.TotalDays);
-            decimal totalPrice = days * car.DailyPrice;
 
+            // Скидки
+            decimal discountRate = 0m;
+            if (days >= 10)
+            {
+                discountRate = 0.10m;
+            }
+            else if (days >= 4)
+            {
+                discountRate = 0.05m;
+            }
+
+            decimal basePrice = days * car.DailyPrice;
+            decimal discountedPrice = basePrice * (1 - discountRate);
+
+            // Страховка
+            decimal insuranceCost = 0m;
+
+            if (dto.IncludeInsurance == true)
+            {
+                insuranceCost = days * 50m;
+            }
+
+
+
+            decimal totalPrice = discountedPrice + insuranceCost;
 
             var booking = new Booking
             {
@@ -80,7 +108,8 @@ namespace CarRental.API.Controllers
                 CustomerName = dto.CustomerName,
                 StartDate = dto.StartDate,
                 EndTime = dto.EndTime,
-                TotalPrice = totalPrice
+                TotalPrice = totalPrice,
+                IncludeInsurance = dto.IncludeInsurance
             };
 
             _context.Bookings.Add(booking);

@@ -10,5 +10,7 @@
         public int CarId { get; set; }
         public Car? Car { get; set; }
         public BookingStatus Status { get; set; } = BookingStatus.Pending;
+        public bool IncludeInsurance { get; set; }
+
     }
 }

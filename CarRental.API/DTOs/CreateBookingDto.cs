@@ -13,5 +13,6 @@ namespace CarRental.API.DTOs
 
         public DateTime StartDate { get; set; }
         public DateTime EndTime { get; set; }
+        public bool IncludeInsurance { get; set; }
     }
 }
