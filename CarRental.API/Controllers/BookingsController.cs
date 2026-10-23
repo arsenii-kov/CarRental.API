@@ -3,7 +3,6 @@ using CarRental.API.DTOs;
 using CarRental.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using FluentValidation;
 
 namespace CarRental.API.Controllers

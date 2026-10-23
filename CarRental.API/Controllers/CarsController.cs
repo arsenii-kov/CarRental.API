@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using CarRental.API.Data;
 using CarRental.API.DTOs;
 using CarRental.API.Models;
+using FluentValidation;
 
 
 
@@ -13,10 +14,12 @@ namespace CarRental.API.Controllers
     public class CarsController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IValidator<CreateCarDto> _validator;
 
-        public CarsController(AppDbContext context)
+        public CarsController(AppDbContext context, IValidator<CreateCarDto> validator)
         {
             _context = context;
+            _validator = validator;
         }
 
         [HttpGet]
@@ -110,6 +113,15 @@ namespace CarRental.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCar([FromBody] CreateCarDto dto)
         {
+            // Валидация
+            var validationResult = await _validator.ValidateAsync(dto);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.ToDictionary());
+            }
+
+
             var car = new Car
             {
                 Brand = dto.Brand,
