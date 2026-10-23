@@ -1,7 +1,6 @@
 ﻿using CarRental.API.DTOs;
 using FluentValidation;
-using FluentValidation.Validators;
-using System.Data;
+
 
 namespace CarRental.API.Validators
 {

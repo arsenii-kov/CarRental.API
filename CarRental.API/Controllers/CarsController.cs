@@ -15,11 +15,13 @@ namespace CarRental.API.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IValidator<CreateCarDto> _validator;
+        private readonly IValidator<UpdateCarDto> _updateValidator;
 
-        public CarsController(AppDbContext context, IValidator<CreateCarDto> validator)
+        public CarsController(AppDbContext context, IValidator<CreateCarDto> validator, IValidator<UpdateCarDto> updateValidator)
         {
             _context = context;
             _validator = validator;
+            _updateValidator = updateValidator;
         }
 
         [HttpGet]
@@ -137,6 +139,14 @@ namespace CarRental.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCar([FromBody] UpdateCarDto dto, int id)
         {
+            // Валидация
+            var validationResult = await _updateValidator.ValidateAsync(dto);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.ToDictionary());
+            }
+
             var car = await _context.Cars.FirstOrDefaultAsync(c => c.Id == id);
 
             if (car == null)

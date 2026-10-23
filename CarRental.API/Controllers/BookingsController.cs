@@ -4,6 +4,7 @@ using CarRental.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
+using System.Security.Cryptography.X509Certificates;
 
 namespace CarRental.API.Controllers
 {
@@ -13,10 +14,12 @@ namespace CarRental.API.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IValidator<CreateBookingDto> _validator;
-        public BookingsController(AppDbContext context, IValidator<CreateBookingDto> validator)
+        private readonly IValidator<UpdateBookingStatusDto> _updateValidator;
+        public BookingsController(AppDbContext context, IValidator<CreateBookingDto> validator, IValidator<UpdateBookingStatusDto> updateValidator)
         {
             _validator = validator;
             _context = context;
+            _updateValidator = updateValidator;
         }
 
         [HttpGet]
@@ -130,6 +133,33 @@ namespace CarRental.API.Controllers
             };
 
             return Ok(responseDto);
+        }
+
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateBookingStatus(int id, [FromBody] UpdateBookingStatusDto dto)
+        {
+            var validationResult = await _updateValidator.ValidateAsync(dto);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.ToDictionary());
+            }
+
+            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null)
+            {
+                return NotFound("No reservation was found for this ID");
+            }
+
+            if (booking.Status == BookingStatus.Cancelled || booking.Status == BookingStatus.Completed)
+            {
+                return BadRequest("Final statuses cannot be changed."); 
+            }
+            booking.Status = dto.Status;
+            await _context.SaveChangesAsync();
+            return Ok(new { booking.Id, Status = booking.Status.ToString() });
+            
         }
 
         [HttpDelete ("{id}")]
