@@ -1,6 +1,7 @@
 using CarRental.API.Data;
-using Microsoft.EntityFrameworkCore;
+using CarRental.API.Services;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IBookingService, BookingService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

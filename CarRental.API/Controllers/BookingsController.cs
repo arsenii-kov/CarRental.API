@@ -1,10 +1,7 @@
-﻿using CarRental.API.Data;
-using CarRental.API.DTOs;
-using CarRental.API.Models;
+﻿using CarRental.API.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using FluentValidation;
-using System.Security.Cryptography.X509Certificates;
+using CarRental.API.Services;
 
 namespace CarRental.API.Controllers
 {
@@ -12,33 +9,35 @@ namespace CarRental.API.Controllers
     [ApiController]
     public class BookingsController : ControllerBase
     {
-        private readonly AppDbContext _context;
         private readonly IValidator<CreateBookingDto> _validator;
         private readonly IValidator<UpdateBookingStatusDto> _updateValidator;
-        public BookingsController(AppDbContext context, IValidator<CreateBookingDto> validator, IValidator<UpdateBookingStatusDto> updateValidator)
+        private readonly IBookingService _bookingService;
+        public BookingsController(IValidator<CreateBookingDto> validator, IValidator<UpdateBookingStatusDto> updateValidator, IBookingService bookingService)
         {
             _validator = validator;
-            _context = context;
             _updateValidator = updateValidator;
+            _bookingService = bookingService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAllBookings()
         {
-            var bookings = await _context.Bookings
-                .Select(b => new BookingDto
-                {
-                    Id = b.Id,
-                    CarId = b.CarId,
-                    CustomerName = b.CustomerName,
-                    StartDate = b.StartDate,
-                    EndTime = b.EndTime,
-                    TotalPrice = b.TotalPrice,
-                    Status = b.Status.ToString()
-                })
-                .ToListAsync();
+            var bookings = await _bookingService.GetAllBookingsAsync();
 
             return Ok(bookings);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetBookingById(int id)
+        {
+            var booking = await _bookingService.GetBookingByIdAsync(id);
+
+            if (booking == null)
+            {
+                return NotFound("Reservation not found.");
+            }
+
+            return Ok(booking);
         }
 
         [HttpPost]
@@ -52,87 +51,16 @@ namespace CarRental.API.Controllers
                 return BadRequest(validationResult.ToDictionary());
             }
 
-            // Поиск авто
-            var car = await _context.Cars.FirstOrDefaultAsync(c => c.Id == dto.CarId);
+            // Вызов сервиса
+            var result = await _bookingService.CreateBookingAsync(dto);
 
-            if(car == null)
+            if (result == null)
             {
-                return NotFound("Car not found");
-            }
-            if (!car.IsAvailable)
-            {
-                return BadRequest("This car is temporarily unavailable for rent");
-            }
-
-            // Проверка на пересечение дат
-            bool bookedCar = await _context.Bookings.AnyAsync(b =>
-                b.CarId == dto.CarId &&
-                b.Status != BookingStatus.Cancelled &&
-                b.StartDate < dto.EndTime &&
-                b.EndTime > dto.StartDate);
-
-            if (bookedCar)
-            {
-                return BadRequest("The car has already been reserved for the selected dates");
-            }
-
-            // Расчет стоимости
-            var duration = dto.EndTime - dto.StartDate;
-            int days = (int)Math.Ceiling(duration.TotalDays);
-
-            // Скидки
-            decimal discountRate = 0m;
-            if (days >= 10)
-            {
-                discountRate = 0.10m;
-            }
-            else if (days >= 4)
-            {
-                discountRate = 0.05m;
-            }
-
-            decimal basePrice = days * car.DailyPrice;
-            decimal discountedPrice = basePrice * (1 - discountRate);
-
-            // Страховка
-            decimal insuranceCost = 0m;
-
-            if (dto.IncludeInsurance == true)
-            {
-                insuranceCost = days * 50m;
+                return BadRequest("Unable to create booking. The car is unavailable or dates overlap.");
             }
 
 
-
-            decimal totalPrice = discountedPrice + insuranceCost;
-
-            var booking = new Booking
-            {
-                CarId = dto.CarId,
-                CustomerName = dto.CustomerName,
-                StartDate = dto.StartDate,
-                EndTime = dto.EndTime,
-                TotalPrice = totalPrice,
-                IncludeInsurance = dto.IncludeInsurance,
-                Status = BookingStatus.Pending
-            };
-
-            _context.Bookings.Add(booking);
-            await _context.SaveChangesAsync();
-
-            var responseDto = new BookingDto
-            {
-                Id = booking.Id,
-                CarId = booking.CarId,
-                CustomerName = booking.CustomerName,
-                StartDate = booking.StartDate,
-                EndTime = booking.EndTime,
-                TotalPrice = booking.TotalPrice,
-                Status = booking.Status.ToString(),
-                IncludeInsurance = booking.IncludeInsurance
-            };
-
-            return Ok(responseDto);
+            return CreatedAtAction(nameof(GetBookingById), new { id = result.Id }, result);
         }
 
         [HttpPatch("{id}/status")]
@@ -145,52 +73,30 @@ namespace CarRental.API.Controllers
                 return BadRequest(validationResult.ToDictionary());
             }
 
-            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+            var result = await _bookingService.UpdateBookingStatusAsync(id, dto.Status);
 
-            if (booking == null)
+            if (!result)
             {
-                return NotFound("No reservation was found for this ID");
+                return BadRequest("Unable to update status. The booking was not found or has already been completed/cancelled.");
             }
 
-            if (booking.Status == BookingStatus.Cancelled || booking.Status == BookingStatus.Completed)
-            {
-                return BadRequest("Final statuses cannot be changed."); 
-            }
-            booking.Status = dto.Status;
-            await _context.SaveChangesAsync();
-            return Ok(new { booking.Id, Status = booking.Status.ToString() });
-            
+            return NoContent();
+
+
+
         }
 
-        [HttpDelete ("{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooking(int id)
         {
-            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+            var result = await _bookingService.CancelBookingAsync(id);
 
-            if (booking == null)
+            if (!result)
             {
-                return NotFound("No reservation was found for this ID");
+                return NotFound("Booking not found or cannot be cancelled.");
             }
 
-            if (booking.Status == BookingStatus.Cancelled)
-            {
-                return BadRequest("This booking is already cancelled.");
-            }
-
-            if (booking.Status == BookingStatus.Completed)
-            {
-                return BadRequest("Completed bookings cannot be cancelled");
-            }
-
-            if (booking.StartDate <= DateTime.Now)
-            {
-                return BadRequest("A lease that has begun or has already ended cannot be canceled");
-            }
-
-            booking.Status = BookingStatus.Cancelled;
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            return NoContent();
         }
     }
 }
