@@ -94,21 +94,52 @@ namespace CarRental.API.Services
             return responseDto;
         }
 
-        public async Task<IEnumerable<BookingDto>> GetAllBookingsAsync()
+        public async Task<IEnumerable<BookingDto>> GetAllBookingsAsync(BookingQueryParametersDto query)
         {
-            var bookings = await _context.Bookings.AsNoTracking().ToListAsync();
+            var queryable = _context.Bookings.AsNoTracking().AsQueryable();
 
-            return bookings.Select(b => new BookingDto
+            if (query.Status.HasValue)
             {
-                Id = b.Id,
-                CarId = b.CarId,
-                CustomerName = b.CustomerName,
-                StartDate = b.StartDate,
-                EndTime = b.EndTime,
-                TotalPrice = b.TotalPrice,
-                Status = b.Status.ToString(),
-                IncludeInsurance = b.IncludeInsurance
-            });
+                queryable = queryable.Where(b => b.Status == query.Status.Value); 
+            }
+
+            if (query.CarId.HasValue)
+            {
+                queryable = queryable.Where(b => b.CarId == query.CarId.Value);
+            }
+
+            if (query.StartDate.HasValue)
+            {
+                queryable = queryable.Where(b => b.StartDate >= query.StartDate.Value);
+            }
+
+            if (query.EndDate.HasValue)
+            {
+                queryable = queryable.Where(b => b.EndTime <= query.EndDate.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.CustomerName))
+            {
+                queryable = queryable.Where(b => b.CustomerName.Contains(query.CustomerName));
+            }
+
+            queryable = queryable
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize);
+
+            return await queryable
+                .Select(b => new BookingDto
+                {
+                    Id = b.Id,
+                    CarId = b.CarId,
+                    CustomerName = b.CustomerName,
+                    StartDate = b.StartDate,
+                    EndTime = b.EndTime,
+                    TotalPrice = b.TotalPrice,
+                    Status = b.Status.ToString(),
+                    IncludeInsurance = b.IncludeInsurance
+                })
+                .ToListAsync();
         }
 
         public async Task<BookingDto?> GetBookingByIdAsync(int id)

@@ -20,9 +20,14 @@ namespace CarRental.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllBookings()
+        public async Task<IActionResult> GetAllBookings([FromQuery] BookingQueryParametersDto query)
         {
-            var bookings = await _bookingService.GetAllBookingsAsync();
+            if (query.PageNumber < 1 || query.PageSize < 1)
+            {
+                return BadRequest("PageNumber and PageSize must be greater than 0.");
+            }
+
+            var bookings = await _bookingService.GetAllBookingsAsync(query);
 
             return Ok(bookings);
         }

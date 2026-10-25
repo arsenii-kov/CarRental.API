@@ -38,7 +38,6 @@ namespace CarRental.API.Services
                 .Skip((query.PageNumber - 1) * query.PageSize)
                 .Take(query.PageSize);
 
-
             var cars = await carsQuery
                 .Select(c => new CarDto
                 {
