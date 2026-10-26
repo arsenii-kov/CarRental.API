@@ -8,9 +8,6 @@ namespace CarRental.API.Validators
     {
         public CreateBookingDtoValidator()
         {
-            RuleFor(x => x.CustomerName)
-                .NotEmpty().WithMessage("Customer name is required.")
-                .Length(2, 100).WithMessage("Car ID must be greater than 0.");
 
             RuleFor(x => x.CarId).GreaterThan(0).WithMessage("Car ID must be greater than 0.");
 

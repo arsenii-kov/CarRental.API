@@ -15,7 +15,7 @@ namespace CarRental.API.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
             modelBuilder.Entity("CarRental.API.Models.Booking", b =>
                 {
@@ -25,10 +25,6 @@ namespace CarRental.API.Migrations
 
                     b.Property<int>("CarId")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("TEXT");
@@ -45,7 +41,7 @@ namespace CarRental.API.Migrations
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("UserId")
+                    b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -119,11 +115,15 @@ namespace CarRental.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CarRental.API.Models.User", null)
+                    b.HasOne("CarRental.API.Models.User", "User")
                         .WithMany("Bookings")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Car");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CarRental.API.Models.Car", b =>

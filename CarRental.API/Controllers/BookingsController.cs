@@ -3,6 +3,9 @@ using CarRental.API.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+
 
 namespace CarRental.API.Controllers
 {
@@ -48,10 +51,26 @@ namespace CarRental.API.Controllers
             return Ok(booking);
         }
 
+        [HttpGet("my")]
+        [Authorize]
+        public async Task<IActionResult> GetMyBookingsAsync()
+        {          
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var bookings = await _bookingService.GetMyBookingsAsync(userId);
+
+            return Ok(bookings);
+        }
+
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDto dto)
         {
+
             // Валидация входного DTO
             var validationResult = await _validator.ValidateAsync(dto);
 
@@ -60,8 +79,14 @@ namespace CarRental.API.Controllers
                 return BadRequest(validationResult.ToDictionary());
             }
 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
             // Вызов сервиса
-            var result = await _bookingService.CreateBookingAsync(dto);
+            var result = await _bookingService.CreateBookingAsync(dto, userId);
 
             if (result == null)
             {
@@ -91,8 +116,6 @@ namespace CarRental.API.Controllers
             }
 
             return NoContent();
-
-
 
         }
 

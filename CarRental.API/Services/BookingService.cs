@@ -14,7 +14,7 @@ namespace CarRental.API.Services
             _context = context;
         }
 
-        public async Task<BookingDto?> CreateBookingAsync(CreateBookingDto dto)
+        public async Task<BookingDto?> CreateBookingAsync(CreateBookingDto dto, int userId)
         {
             // Поиск авто
             var car = await _context.Cars.FindAsync(dto.CarId);
@@ -68,7 +68,7 @@ namespace CarRental.API.Services
             var booking = new Booking
             {
                 CarId = dto.CarId,
-                CustomerName = dto.CustomerName,
+                UserId = userId,
                 StartDate = dto.StartDate,
                 EndTime = dto.EndTime,
                 TotalPrice = totalPrice,
@@ -83,7 +83,7 @@ namespace CarRental.API.Services
             {
                 Id = booking.Id,
                 CarId = booking.CarId,
-                CustomerName = booking.CustomerName,
+                UserId = booking.UserId,
                 StartDate = booking.StartDate,
                 EndTime = booking.EndTime,
                 TotalPrice = booking.TotalPrice,
@@ -118,9 +118,9 @@ namespace CarRental.API.Services
                 queryable = queryable.Where(b => b.EndTime <= query.EndDate.Value);
             }
 
-            if (!string.IsNullOrWhiteSpace(query.CustomerName))
+            if (query.UserId.HasValue)
             {
-                queryable = queryable.Where(b => b.CustomerName.Contains(query.CustomerName));
+                queryable = queryable.Where(b => b.UserId == query.UserId.Value);
             }
 
             queryable = queryable
@@ -132,7 +132,7 @@ namespace CarRental.API.Services
                 {
                     Id = b.Id,
                     CarId = b.CarId,
-                    CustomerName = b.CustomerName,
+                    UserId = b.UserId,
                     StartDate = b.StartDate,
                     EndTime = b.EndTime,
                     TotalPrice = b.TotalPrice,
@@ -156,13 +156,31 @@ namespace CarRental.API.Services
             {
                 Id = booking.Id,
                 CarId = booking.CarId,
-                CustomerName = booking.CustomerName,
+                UserId = booking.UserId,
                 StartDate = booking.StartDate,
                 EndTime = booking.EndTime,
                 TotalPrice = booking.TotalPrice,
                 Status = booking.Status.ToString(),
                 IncludeInsurance = booking.IncludeInsurance
             };
+        }
+
+        public async Task<IEnumerable<BookingDto>> GetMyBookingsAsync(int userId)
+        {
+            var myBooking = _context.Bookings.Where(b => b.UserId == userId);
+            return await myBooking
+                .Select(b => new BookingDto
+                {
+                    Id = b.Id,
+                    CarId = b.CarId,
+                    UserId = b.UserId,
+                    StartDate = b.StartDate,
+                    EndTime = b.EndTime,
+                    TotalPrice = b.TotalPrice,
+                    Status = b.Status.ToString(),
+                    IncludeInsurance = b.IncludeInsurance
+                })
+                .ToListAsync();
         }
 
         public async Task<bool> UpdateBookingStatusAsync(int id, BookingStatus newStatus)
