@@ -45,9 +45,14 @@ namespace CarRental.API.Migrations
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CarId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Bookings");
                 });
@@ -80,6 +85,32 @@ namespace CarRental.API.Migrations
                     b.ToTable("Cars");
                 });
 
+            modelBuilder.Entity("CarRental.API.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("CarRental.API.Models.Booking", b =>
                 {
                     b.HasOne("CarRental.API.Models.Car", "Car")
@@ -88,10 +119,19 @@ namespace CarRental.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CarRental.API.Models.User", null)
+                        .WithMany("Bookings")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Car");
                 });
 
             modelBuilder.Entity("CarRental.API.Models.Car", b =>
+                {
+                    b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("CarRental.API.Models.User", b =>
                 {
                     b.Navigation("Bookings");
                 });

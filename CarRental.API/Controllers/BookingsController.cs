@@ -1,7 +1,8 @@
 ﻿using CarRental.API.DTOs;
-using Microsoft.AspNetCore.Mvc;
-using FluentValidation;
 using CarRental.API.Services;
+using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CarRental.API.Controllers
 {
@@ -20,6 +21,7 @@ namespace CarRental.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBookings([FromQuery] BookingQueryParametersDto query)
         {
             if (query.PageNumber < 1 || query.PageSize < 1)
@@ -33,6 +35,7 @@ namespace CarRental.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetBookingById(int id)
         {
             var booking = await _bookingService.GetBookingByIdAsync(id);
@@ -46,6 +49,7 @@ namespace CarRental.API.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDto dto)
         {
             // Валидация входного DTO
@@ -69,6 +73,7 @@ namespace CarRental.API.Controllers
         }
 
         [HttpPatch("{id}/status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBookingStatus(int id, [FromBody] UpdateBookingStatusDto dto)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto);
@@ -92,6 +97,7 @@ namespace CarRental.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteBooking(int id)
         {
             var result = await _bookingService.CancelBookingAsync(id);

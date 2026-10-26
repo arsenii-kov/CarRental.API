@@ -3,6 +3,7 @@ using CarRental.API.DTOs;
 using CarRental.API.Models;
 using CarRental.API.Services;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -66,6 +67,7 @@ namespace CarRental.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateCar([FromBody] CreateCarDto dto)
         {
             // Валидация
@@ -80,7 +82,9 @@ namespace CarRental.API.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = car.Id }, car);
         }
+
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateCar([FromBody] UpdateCarDto dto, int id)
         {
             // Валидация
@@ -102,6 +106,7 @@ namespace CarRental.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteCar(int id)
         {
             var result = await _carService.DeleteCarAsync(id);
