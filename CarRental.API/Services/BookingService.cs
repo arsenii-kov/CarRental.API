@@ -202,11 +202,16 @@ namespace CarRental.API.Services
             return true;
         }
 
-        public async Task<bool> CancelBookingAsync(int id)
+        public async Task<bool> CancelBookingAsync(int id, int currentUserId, bool isAdmin)
         {
             var booking = await _context.Bookings.FindAsync(id);
 
             if (booking == null)
+            {
+                return false;
+            }
+
+            if (!isAdmin && booking.UserId != currentUserId)
             {
                 return false;
             }

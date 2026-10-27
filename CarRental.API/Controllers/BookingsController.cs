@@ -120,10 +120,18 @@ namespace CarRental.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> DeleteBooking(int id)
         {
-            var result = await _bookingService.CancelBookingAsync(id);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            var isAdmin = User.IsInRole("Admin");
+
+            var result = await _bookingService.CancelBookingAsync(id,currentUserId,isAdmin);
 
             if (!result)
             {

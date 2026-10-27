@@ -10,5 +10,5 @@ public interface IBookingService
     Task<BookingDto?> GetBookingByIdAsync(int id);
     Task<IEnumerable<BookingDto>> GetMyBookingsAsync(int userId);
     Task<bool> UpdateBookingStatusAsync(int id, BookingStatus newStatus);
-    Task<bool> CancelBookingAsync(int id);
+    Task<bool> CancelBookingAsync(int id, int currentUserId, bool isAdmin);
 }
