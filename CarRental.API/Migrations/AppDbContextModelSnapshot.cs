@@ -79,6 +79,35 @@ namespace CarRental.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Cars");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Brand = "Toyota",
+                            DailyPrice = 45.0m,
+                            IsAvailable = true,
+                            Model = "Camry",
+                            Year = 2022
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Brand = "BMW",
+                            DailyPrice = 75.0m,
+                            IsAvailable = true,
+                            Model = "320i",
+                            Year = 2023
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Brand = "Tesla",
+                            DailyPrice = 85.0m,
+                            IsAvailable = true,
+                            Model = "Model 3",
+                            Year = 2023
+                        });
                 });
 
             modelBuilder.Entity("CarRental.API.Models.User", b =>
@@ -105,6 +134,16 @@ namespace CarRental.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Email = "admin@carrental.com",
+                            FullName = "Admin",
+                            PasswordHash = "$2b$10$cRMoEQLHvqs4D4IkaWxnf.DcYnzBEjlyF/kVpwOEGIVKQOunKEQWm",
+                            Role = 2
+                        });
                 });
 
             modelBuilder.Entity("CarRental.API.Models.Booking", b =>
