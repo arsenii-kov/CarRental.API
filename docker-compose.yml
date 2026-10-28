@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Сервис базы данных PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: carrental-db
+    environment:
+      POSTGRES_DB: carrental_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d carrental_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Сервис нашего Web API
+  api:
+    container_name: carrental-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=carrental_db;Username=postgres;Password=postgrespassword
+    ports:
+      - "5000:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
